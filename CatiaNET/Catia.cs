@@ -101,7 +101,7 @@ namespace CatiaNET {
 			};
 
 			Maze M = new Maze(GridX, GridY);
-			Line[] Lines = M.Generate(W / (double)GridX, H / (double)GridY);
+			Line[] Lines = M.Generate(W, H);
 
 			EditSketch(GetCurrentSketch(), (F) => {
 				for (int i = 0; i < Lines.Length; i++)

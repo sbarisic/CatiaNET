@@ -244,36 +244,29 @@ namespace CatiaNET {
 					if (y + 1 == Bmp.Height || x + 1 == Bmp.Width)
 						SetPixel(x, y, true);
 
-			Bmp.RotateFlip(RotateFlipType.RotateNoneFlipY);
-			Bmp.Save("maze.png", ImageFormat.Png);
+			ScaleX /= Bmp.Width;
+			ScaleY /= Bmp.Height;
 
-			ScaleX /= 2;
-			ScaleY /= 2;
+			Lines.Add(new Line(0, Bmp.Height * ScaleY, Bmp.Width * ScaleX, Bmp.Height * ScaleY));
+			Lines.Add(new Line(0, 0, 0, Bmp.Height * ScaleY));
+			Lines.Add(new Line(0, 0, Bmp.Width * ScaleX, 0));
+			Lines.Add(new Line(Bmp.Width * ScaleX, 0, Bmp.Width * ScaleX, Bmp.Height * ScaleY));
 
 			for (int y = 0; y < Bmp.Height; y++)
-				for (int x = 0; x < Bmp.Width; x++) {
-					bool Empty = !GetPixel(x, y);
-					bool Top = GetPixel(x, y + 1);
-					bool Left = GetPixel(x - 1, y);
-					bool Bottom = GetPixel(x, y - 1);
-					bool Right = GetPixel(x + 1, y);
-
-					if (Empty) {
-						if (Top) {
+				for (int x = 0; x < Bmp.Width; x++)
+					if (!GetPixel(x, y)) { // If empty
+						if (GetPixel(x, y + 1)) // Top
 							Lines.Add(new Line(x * ScaleX, (y + 1) * ScaleY, (x + 1) * ScaleX, (y + 1) * ScaleY));
-						}
-						if (Left) {
+						if (GetPixel(x - 1, y)) // Left
 							Lines.Add(new Line(x * ScaleX, y * ScaleY, x * ScaleX, (y + 1) * ScaleY));
-						}
-						if (Bottom) {
+						if (GetPixel(x, y - 1)) // Bottom
 							Lines.Add(new Line(x * ScaleX, y * ScaleY, (x + 1) * ScaleX, y * ScaleY));
-						}
-						if (Right) {
+						if (GetPixel(x + 1, y)) // Right
 							Lines.Add(new Line((x + 1) * ScaleX, y * ScaleY, (x + 1) * ScaleX, (y + 1) * ScaleY));
-						}
 					}
-				}
 
+			Bmp.RotateFlip(RotateFlipType.RotateNoneFlipY);
+			Bmp.Save("maze.png", ImageFormat.Png);
 			return Lines.ToArray();
 		}
 	}

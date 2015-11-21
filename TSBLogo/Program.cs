@@ -20,7 +20,7 @@ namespace TSBLogo {
 			Console.Title = "TSB Logo";
 
 			//Prompt("Press enter to generate maze ... ");
-			Catia.GenerateMaze(300 / 2, 500 / 2, 15, 25);
+			Catia.GenerateMaze(300, 500, 15, 25);
 			//Catia.GenerateMaze(PromptInt("Width: "), PromptInt("Height: "), PromptInt("Grid X: "), PromptInt("Grid Y: "));
 			/*Prompt("Press enter to generate logo ... ");
 			Catia.GenerateLogo(90, 250, 100, 16);*/
