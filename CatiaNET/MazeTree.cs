@@ -196,8 +196,6 @@ namespace CatiaNET {
 
 		public Line[] Generate(double ScaleX, double ScaleY) {
 			HashSet<Line> Lines = new HashSet<Line>();
-			HashSet<Line> LinesProcessed = new HashSet<Line>();
-
 			const int Size = 2;
 
 			Bitmap Bmp = new Bitmap(Width * Size + 1, Height * Size + 1);
@@ -233,31 +231,13 @@ namespace CatiaNET {
 					SetPixel(XX * Size + h, YY * Size, true);
 			};
 
-
-
-
-			for (int y = 0; y < Height; y++) {
+			for (int y = 0; y < Height; y++)
 				for (int x = 0; x < Width; x++) {
-					/*if (y + 1 == Height)
-						SetPixel(x, y * Size, true);*/
-
 					if (HasFlag(x, y, CellState.Left))
 						PutLeft(x, y);
 					if (HasFlag(x, y, CellState.Bottom))
 						PutBottom(x, y);
-
-					/*Line[] WallLines = GenerateWalls(x, y, ScaleX, ScaleY);
-					for (int n = 0; n < WallLines.Length; n++)
-						Lines.Add(WallLines[n]);*/
-
-					/*if (x + 1 == Width)
-						Lines.Add(new Line(new Vector((x + 1) * ScaleX, y * ScaleY),
-							new Vector((x + 1) * ScaleX, (y + 1) * ScaleY)));
-					if (y + 1 == Height)
-						Lines.Add(new Line(new Vector(x * ScaleX, (y + 1) * ScaleY),
-							new Vector((x + 1) * ScaleX, (y + 1) * ScaleY)));*/
 				}
-			}
 
 			for (int y = 0; y < Bmp.Height; y++)
 				for (int x = 0; x < Bmp.Width; x++)
@@ -265,8 +245,35 @@ namespace CatiaNET {
 						SetPixel(x, y, true);
 
 			Bmp.RotateFlip(RotateFlipType.RotateNoneFlipY);
-			Bmp.Save("test.png", ImageFormat.Png);
-			Environment.Exit(0);
+			Bmp.Save("maze.png", ImageFormat.Png);
+
+			ScaleX /= 2;
+			ScaleY /= 2;
+
+			for (int y = 0; y < Bmp.Height; y++)
+				for (int x = 0; x < Bmp.Width; x++) {
+					bool Empty = !GetPixel(x, y);
+					bool Top = GetPixel(x, y + 1);
+					bool Left = GetPixel(x - 1, y);
+					bool Bottom = GetPixel(x, y - 1);
+					bool Right = GetPixel(x + 1, y);
+
+					if (Empty) {
+						if (Top) {
+							Lines.Add(new Line(x * ScaleX, (y + 1) * ScaleY, (x + 1) * ScaleX, (y + 1) * ScaleY));
+						}
+						if (Left) {
+							Lines.Add(new Line(x * ScaleX, y * ScaleY, x * ScaleX, (y + 1) * ScaleY));
+						}
+						if (Bottom) {
+							Lines.Add(new Line(x * ScaleX, y * ScaleY, (x + 1) * ScaleX, y * ScaleY));
+						}
+						if (Right) {
+							Lines.Add(new Line((x + 1) * ScaleX, y * ScaleY, (x + 1) * ScaleX, (y + 1) * ScaleY));
+						}
+					}
+				}
+
 			return Lines.ToArray();
 		}
 	}
