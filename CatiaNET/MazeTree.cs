@@ -61,7 +61,8 @@ namespace CatiaNET {
 			for (var x = 0; x < Width; x++)
 				for (var y = 0; y < Height; y++)
 					Cells[x, y] = CellState.Initial;
-			RNG = new Random(42);
+			//RNG = new Random(42);
+			RNG = new Random();
 			VisitCell(RNG.Next(Width), RNG.Next(Height));
 		}
 
