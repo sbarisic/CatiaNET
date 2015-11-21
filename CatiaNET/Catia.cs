@@ -14,9 +14,12 @@ namespace CatiaNET {
 		public static Application CatiaInstance;
 
 		static Catia() {
-			CatiaInstance = Marshal.GetActiveObject("Catia.Application") as Application;
+			try {
+				CatiaInstance = Marshal.GetActiveObject("Catia.Application") as Application;
+			} catch (Exception) {
+			}
 			if (CatiaInstance == null)
-				throw new Exception("Could not find Catia interface");
+				Console.WriteLine("Could not find Catia interface");
 		}
 
 		public static PartDocument GetCurrentPartDocument() {
@@ -88,7 +91,7 @@ namespace CatiaNET {
 			BarCircle.StartPoint = BarLower.EndPoint;
 		}
 
-		public static void GenerateMaze(int W, int H, int GridX, int GridY) {
+		public static void GenerateMaze(double W, double H, int GridX, int GridY) {
 			List<Tuple<Vector, Point2D>> LookupTable = new List<Tuple<Vector, Point2D>>();
 			Func<Vector, Point2D> TableGet = (A) => {
 				for (int i = 0; i < LookupTable.Count; i++)
@@ -98,7 +101,7 @@ namespace CatiaNET {
 			};
 
 			Maze M = new Maze(GridX, GridY);
-			Line[] Lines = M.Generate((double)W / (double)GridX, (double)H / (double)GridY);
+			Line[] Lines = M.Generate(W / (double)GridX, H / (double)GridY);
 
 			EditSketch(GetCurrentSketch(), (F) => {
 				for (int i = 0; i < Lines.Length; i++)

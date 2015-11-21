@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Windows;
+using System.Drawing;
+using System.Drawing.Imaging;
+
+using Point = System.Windows.Point;
 
 namespace CatiaNET {
 	public static class Extensions {
@@ -18,15 +22,24 @@ namespace CatiaNET {
 		public static CellState OppositeWall(this CellState Orig) {
 			return (CellState)(((int)Orig >> 2) | ((int)Orig << 2)) & CellState.Initial;
 		}
+
+		public static string GetStates(this CellState CS) {
+			string[] Names = Enum.GetNames(typeof(CellState));
+			StringBuilder SB = new StringBuilder();
+			for (int i = 0; i < Names.Length; i++)
+				if (CS.HasFlag((CellState)Enum.Parse(typeof(CellState), Names[i])))
+					SB.AppendFormat("{0} ", Names[i]);
+			return SB.ToString().Trim();
+		}
 	}
 
 	[Flags]
 	public enum CellState {
-		Bottom = 1,
-		Right = 2,
-		Top = 4,
-		Left = 8,
-		Visited = 128,
+		Bottom = 1 << 0,
+		Right = 1 << 1,
+		Top = 1 << 2,
+		Left = 1 << 3,
+		Visited = 1 << 5,
 		Initial = Bottom | Right | Top | Left,
 	}
 
@@ -109,7 +122,7 @@ namespace CatiaNET {
 		public Line[] GenerateWalls(int X, int Y, double ScaleX, double ScaleY) {
 			List<Line> Lines = new List<Line>();
 			CellState S = GetCell(X, Y);
-			float OriginalOffset = 0.7f;
+			float OriginalOffset = 0.5f;
 			float Offset = OriginalOffset;
 
 			float XOffset = OriginalOffset;
@@ -145,7 +158,23 @@ namespace CatiaNET {
 
 			// Bottom missing
 			if (!S.HasFlag(CellState.Top) && !S.HasFlag(CellState.Right) && !HasFlag(X + 1, Y, CellState.Top))
-				Lines.Add(new Line((X + OriginalOffset) * ScaleX, (Y + 1) * ScaleY, (X + 1) * ScaleX, (Y + 1) * ScaleY)); // Bottom*/
+				Lines.Add(new Line((X + OriginalOffset) * ScaleX, (Y + 1) * ScaleY, (X + 1) * ScaleX, (Y + 1) * ScaleY)); // Bottom
+
+			// Left missing
+			if (!S.HasFlag(CellState.Left) && HasFlag(X - 1, Y, CellState.Top) && HasFlag(X, Y + 1, CellState.Left))
+				Lines.Add(new Line((X) * ScaleX, (Y + OriginalOffset) * ScaleY, (X) * ScaleX, (Y + YOffset) * ScaleY)); // Left
+
+			// Right missing
+			if (!S.HasFlag(CellState.Right) && HasFlag(X + 1, Y, CellState.Top) && HasFlag(X + 1, Y + 1, CellState.Bottom)
+				&& !(HasFlag(X, Y + 1, CellState.Right) || HasFlag(X, Y + 1, CellState.Bottom)))
+				Lines.Add(new Line((X + 1) * ScaleX, (Y + OriginalOffset) * ScaleY, (X + 1) * ScaleX, (Y + YOffset) * ScaleY)); // Left
+
+			if (X == 4 && Y == 0) {
+				Console.WriteLine(GetCell(X - 1, Y).GetStates());
+				Console.WriteLine(S.GetStates());
+				Console.WriteLine(GetCell(X, Y + 1).GetStates());
+				Console.ReadLine();
+			}
 
 			//Lines.Add(new Line(X * ScaleX, Y * ScaleY, (X + 1) * ScaleX, Y * ScaleY)); // Bottom
 			//Lines.Add(new Line((X) * ScaleX, Y * ScaleY, (X) * ScaleX, (Y + 1) * ScaleY)); // Left
@@ -169,11 +198,57 @@ namespace CatiaNET {
 			HashSet<Line> Lines = new HashSet<Line>();
 			HashSet<Line> LinesProcessed = new HashSet<Line>();
 
+			const int Size = 2;
+
+			Bitmap Bmp = new Bitmap(Width * Size + 1, Height * Size + 1);
+			Graphics BmpGraphics = Graphics.FromImage(Bmp);
+			BmpGraphics.Clear(Color.White);
+			BmpGraphics.Dispose();
+			Color FillClr = Color.Black;
+
+			Func<int, int, bool> GetPixel = (XX, YY) => {
+				if (XX < 0 || XX >= Bmp.Width || YY < 0 || YY >= Bmp.Height)
+					return true;
+				Color Col = Bmp.GetPixel(XX, YY);
+				if (Col.R == 0 && Col.G == 0 && Col.B == 0)
+					return true;
+				return false;
+			};
+
+			Action<int, int, bool> SetPixel = (XX, YY, B) => {
+				if (XX < 0 || XX >= Bmp.Width || YY < 0 || YY >= Bmp.Height)
+					return;
+				Color Col = Color.Black;
+				if (!B)
+					Col = Color.White;
+				Bmp.SetPixel(XX, YY, Col);
+			};
+
+			Action<int, int> PutLeft = (XX, YY) => {
+				for (int h = 0; h < Size + 1; h++)
+					SetPixel(XX * Size, YY * Size + h, true);
+			};
+			Action<int, int> PutBottom = (XX, YY) => {
+				for (int h = 0; h < Size + 1; h++)
+					SetPixel(XX * Size + h, YY * Size, true);
+			};
+
+
+
+
 			for (int y = 0; y < Height; y++) {
 				for (int x = 0; x < Width; x++) {
-					Line[] WallLines = GenerateWalls(x, y, ScaleX, ScaleY);
+					/*if (y + 1 == Height)
+						SetPixel(x, y * Size, true);*/
+
+					if (HasFlag(x, y, CellState.Left))
+						PutLeft(x, y);
+					if (HasFlag(x, y, CellState.Bottom))
+						PutBottom(x, y);
+
+					/*Line[] WallLines = GenerateWalls(x, y, ScaleX, ScaleY);
 					for (int n = 0; n < WallLines.Length; n++)
-						Lines.Add(WallLines[n]);
+						Lines.Add(WallLines[n]);*/
 
 					/*if (x + 1 == Width)
 						Lines.Add(new Line(new Vector((x + 1) * ScaleX, y * ScaleY),
@@ -184,10 +259,14 @@ namespace CatiaNET {
 				}
 			}
 
-			/*foreach (var L in Lines)
-				//LinesProcessed.Add(new Line(L.Start.HashOffset(), L.End.HashOffset()));
-				LinesProcessed.Add(L);
-			return LinesProcessed.ToArray();*/
+			for (int y = 0; y < Bmp.Height; y++)
+				for (int x = 0; x < Bmp.Width; x++)
+					if (y + 1 == Bmp.Height || x + 1 == Bmp.Width)
+						SetPixel(x, y, true);
+
+			Bmp.RotateFlip(RotateFlipType.RotateNoneFlipY);
+			Bmp.Save("test.png", ImageFormat.Png);
+			Environment.Exit(0);
 			return Lines.ToArray();
 		}
 	}
